@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ETF Investment Calculator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        color: #333;
+      }
+      .container {
+        width: 90%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        color: #4caf50;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      input[type="date"],
+      input[type="number"],
+      input[type="text"] {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .remove-btn {
+        background-color: #f44336;
+        border: none;
+        padding: 8px;
+        margin-top: 5px;
+      }
+      .remove-btn:hover {
+        background-color: #e53935;
+      }
+      #result {
+        margin-top: 20px;
+      }
+      #result h3 {
+        color: #4caf50;
+      }
+      #result p {
+        font-size: 16px;
+        margin: 5px 0;
+      }
+      @media (max-width: 600px) {
+        button {
+          font-size: 14px;
+          padding: 8px;
+        }
+        input {
+          font-size: 14px;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>ETF Investment Calculator</h2>
+      <form id="investmentForm">
+        <div id="investmentsContainer">
+          <div class="investment-entry">
+            <label>Date (YYYY-MM-DD):</label>
+            <input type="date" name="date" required />
+            <label>Amount (EUR):</label>
+            <input type="number" name="amount_eur" required />
+            <button
+              type="button"
+              class="remove-btn"
+              onclick="removeInvestment(this)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+        <button type="button" onclick="addInvestment()">
+          Add Another Investment
+        </button>
+        <label>ETF Symbol:</label>
+        <input type="text" id="etfSymbol" placeholder="e.g., VOO" required />
+        <button type="submit">Calculate Portfolio</button>
+      </form>
+
+      <div id="result" style="display: none">
+        <h3>Results</h3>
+        <p>Total Units: <span id="totalUnits"></span></p>
+        <p>Current ETF Price (EUR): <span id="currentPriceEur"></span></p>
+        <p>Portfolio Value: <span id="portfolioValue"></span> EUR</p>
+        <p>Total Investment: <span id="totalInvestment"></span> EUR</p>
+        <p>Profit: <span id="profit"></span> EUR</p>
+      </div>
+    </div>
+
+    <script>
+      function addInvestment() {
+        const container = document.getElementById("investmentsContainer");
+        const div = document.createElement("div");
+        div.className = "investment-entry";
+        div.innerHTML = `
+                <label>Date (YYYY-MM-DD):</label>
+                <input type="date" name="date" required />
+                <label>Amount (EUR):</label>
+                <input type="number" name="amount_eur" required />
+                <button type="button" class="remove-btn" onclick="removeInvestment(this)">Remove</button>
+            `;
+        container.appendChild(div);
+      }
+
+      function removeInvestment(button) {
+        const container = document.getElementById("investmentsContainer");
+        container.removeChild(button.parentElement);
+      }
+
+      document
+        .getElementById("investmentForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const investments = Array.from(
+            document.querySelectorAll(
+              "#investmentsContainer > .investment-entry"
+            )
+          ).map((div) => ({
+            date: div.querySelector('input[name="date"]').value,
+            amount_eur: parseFloat(
+              div.querySelector('input[name="amount_eur"]').value
+            ),
+          }));
+
+          const etfSymbol = document.getElementById("etfSymbol").value;
+
+          try {
+            const response = await fetch("/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ investments, etfSymbol }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+              document.getElementById("totalUnits").textContent =
+                result.totalUnits;
+              document.getElementById("currentPriceEur").textContent =
+                result.currentPriceEur;
+              document.getElementById("portfolioValue").textContent =
+                result.portfolioValue;
+              document.getElementById("totalInvestment").textContent =
+                result.totalInvestment;
+              document.getElementById("profit").textContent = result.profit;
+              document.getElementById("result").style.display = "block";
+            } else {
+              alert(result.error || "Error calculating portfolio");
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred while calculating the portfolio.");
+          }
+        });
+    </script>
+  </body>
+</html>
