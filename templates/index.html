@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ETF Ticker Investment Calculator</title>
+    <title>Portfolio Investment Calculator</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -15,7 +15,7 @@
       .container {
         width: 90%;
         max-width: 800px;
-        margin: 0 auto;
+        margin: 30px auto;
         padding: 20px;
         background: #fff;
         border-radius: 8px;
@@ -29,7 +29,7 @@
       form {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 20px;
       }
       label {
         font-weight: bold;
@@ -41,6 +41,21 @@
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
+        font-size: 16px;
+      }
+      .investment-entry {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        background-color: #fafafa;
+      }
+      .investment-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
       }
       button {
         padding: 10px;
@@ -58,7 +73,7 @@
         background-color: #f44336;
         border: none;
         padding: 8px;
-        margin-top: 5px;
+        cursor: pointer;
       }
       .remove-btn:hover {
         background-color: #e53935;
@@ -72,6 +87,12 @@
       #result p {
         font-size: 16px;
         margin: 5px 0;
+      }
+      #calculating {
+        display: none;
+        margin-top: 20px;
+        color: #ff9800;
+        font-size: 16px;
       }
       @media (max-width: 600px) {
         button {
@@ -87,30 +108,36 @@
   </head>
   <body>
     <div class="container">
-      <h2>ETF Investment Calculator</h2>
+      <h2>Investment Calculator</h2>
       <form id="investmentForm">
         <div id="investmentsContainer">
           <div class="investment-entry">
-            <label>Date (YYYY-MM-DD):</label>
+            <label>Date:</label>
             <input type="date" name="date" required />
             <label>Amount (EUR):</label>
             <input type="number" name="amount_eur" required />
-            <button
-              type="button"
-              class="remove-btn"
-              onclick="removeInvestment(this)"
-            >
-              Remove
-            </button>
+            <div class="investment-buttons">
+              <button
+                type="button"
+                class="remove-btn"
+                onclick="removeInvestment(this)"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
-        <button type="button" onclick="addInvestment()">
-          Add Another Investment
-        </button>
-        <label>ETF Symbol:</label>
+        <div class="investment-buttons">
+          <button type="button" onclick="addInvestment()">
+            Add Another Investment
+          </button>
+        </div>
+        <label>Ticker:</label>
         <input type="text" id="etfSymbol" placeholder="e.g., VOO" required />
-        <button type="submit">Calculate Portfolio</button>
+        <button type="submit">Calculate Portfolio Value</button>
       </form>
+
+      <div id="calculating">Calculating...</div>
 
       <div id="result" style="display: none">
         <h3>Results</h3>
@@ -132,20 +159,30 @@
                 <input type="date" name="date" required />
                 <label>Amount (EUR):</label>
                 <input type="number" name="amount_eur" required />
-                <button type="button" class="remove-btn" onclick="removeInvestment(this)">Remove</button>
+                <div class="investment-buttons">
+                  <button type="button" class="remove-btn" onclick="removeInvestment(this)">Remove</button>
+                </div>
             `;
         container.appendChild(div);
       }
 
       function removeInvestment(button) {
         const container = document.getElementById("investmentsContainer");
-        container.removeChild(button.parentElement);
+        container.removeChild(button.parentElement.parentElement);
+      }
+
+      function formatCurrency(value) {
+        return parseFloat(value).toFixed(2);
       }
 
       document
         .getElementById("investmentForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+
+          // Show the "Calculating..." message
+          document.getElementById("calculating").style.display = "block";
+          document.getElementById("result").style.display = "none";
 
           const investments = Array.from(
             document.querySelectorAll(
@@ -170,14 +207,16 @@
             const result = await response.json();
             if (response.ok) {
               document.getElementById("totalUnits").textContent =
-                result.totalUnits;
+                formatCurrency(result.totalUnits);
               document.getElementById("currentPriceEur").textContent =
-                result.currentPriceEur;
+                formatCurrency(result.currentPriceEur);
               document.getElementById("portfolioValue").textContent =
-                result.portfolioValue;
+                formatCurrency(result.portfolioValue);
               document.getElementById("totalInvestment").textContent =
-                result.totalInvestment;
-              document.getElementById("profit").textContent = result.profit;
+                formatCurrency(result.totalInvestment);
+              document.getElementById("profit").textContent = formatCurrency(
+                result.profit
+              );
               document.getElementById("result").style.display = "block";
             } else {
               alert(result.error || "Error calculating portfolio");
@@ -185,6 +224,9 @@
           } catch (error) {
             console.error("Error:", error);
             alert("An error occurred while calculating the portfolio.");
+          } finally {
+            // Hide the "Calculating..." message
+            document.getElementById("calculating").style.display = "none";
           }
         });
     </script>
